@@ -1,0 +1,206 @@
+{
+  "name": "owasp-scanner",
+  "displayName": "OWASP Top 10 Vulnerability Scanner",
+  "description": "Real-time security vulnerability detection based on OWASP Top 10",
+  "version": "0.1.0",
+  "publisher": "owasp-scanner",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Linters", "Other"],
+  "keywords": ["security", "owasp", "vulnerability", "scanner", "linter"],
+  "activationEvents": [
+    "onLanguage:javascript",
+    "onLanguage:typescript",
+    "onLanguage:javascriptreact",
+    "onLanguage:typescriptreact",
+    "onLanguage:python",
+    "onLanguage:java",
+    "onLanguage:php",
+    "onLanguage:csharp",
+    "onLanguage:go"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "owaspScanner.scanWorkspace",
+        "title": "OWASP: Scan Workspace",
+        "icon": "$(shield)"
+      },
+      {
+        "command": "owaspScanner.scanFile",
+        "title": "OWASP: Scan Current File",
+        "icon": "$(search)"
+      },
+      {
+        "command": "owaspScanner.clearDiagnostics",
+        "title": "OWASP: Clear All Diagnostics"
+      },
+      {
+        "command": "owaspScanner.showReport",
+        "title": "OWASP: Show Security Report"
+      }
+    ],
+    "configuration": {
+      "title": "OWASP Scanner",
+      "properties": {
+        "owaspScanner.enabledCategories": {
+          "type": "array",
+          "default": ["A01", "A02", "A03", "A04", "A05", "A06", "A07", "A08", "A09", "A10"],
+          "description": "OWASP Top 10 categories to scan for"
+        },
+        "owaspScanner.severity.minimum": {
+          "type": "string",
+          "default": "low",
+          "enum": ["critical", "high", "medium", "low", "info"],
+          "description": "Minimum severity level to report"
+        },
+        "owaspScanner.llm.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable LLM-based analysis for deeper context (requires API key and explicit opt-in)"
+        },
+        "owaspScanner.llm.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Anthropic API key for LLM analysis"
+        },
+        "owaspScanner.scanOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically scan files on save"
+        },
+        "owaspScanner.scanOnChange": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically scan files on change (debounced)"
+        },
+        "owaspScanner.excludePatterns": {
+          "type": "array",
+          "default": [
+            "**/node_modules/**",
+            "**/dist/**",
+            "**/build/**",
+            "**/out/**",
+            "**/.git/**",
+            "**/.github/**",
+            "**/.vscode/**",
+            "**/.venv/**",
+            "**/venv/**",
+            "**/env/**",
+            "**/.env/**",
+            "**/.claude/**",
+            "**/.idea/**",
+            "**/__pycache__/**",
+            "**/*.pyc",
+            "**/coverage/**",
+            "**/.nyc_output/**",
+            "**/vendor/**",
+            "**/target/**",
+            "**/.cache/**",
+            "**/.next/**",
+            "**/.nuxt/**",
+            "**/tmp/**",
+            "**/temp/**",
+            "**/.angular/**",
+            "**/test/**",
+            "**/tests/**",
+            "**/__tests__/**",
+            "**/e2e/**",
+            "**/*.test.ts",
+            "**/*.test.js",
+            "**/*.spec.ts",
+            "**/*.spec.js",
+            "**/*.Tests/**",
+            "**/*.Test/**",
+            "**/*.UnitTests/**",
+            "**/*.IntegrationTests/**",
+            "**/*.Specs/**",
+            "**/*.min.js",
+            "**/*.min.css",
+            "**/*.bundle.js",
+            "**/*.chunk.js",
+            "**/*.compiled.js",
+            "**/*.map",
+            "**/bundle/**",
+            "**/bundles/**",
+            "**/seeders/**",
+            "**/seeds/**",
+            "**/seed/**",
+            "**/*seeder*",
+            "**/*Seeder*",
+            "**/*.razor",
+            "**/wwwroot/**"
+          ],
+          "description": "Glob patterns for files/folders to exclude from scanning"
+        },
+        "owaspScanner.debounceDelay": {
+          "type": "number",
+          "default": 500,
+          "description": "Milliseconds to wait after last keystroke before triggering scan"
+        }
+      }
+    },
+    "views": {
+      "explorer": [
+        {
+          "id": "owaspScanner.vulnerabilityTree",
+          "name": "Security Findings",
+          "icon": "$(shield)",
+          "contextualTitle": "OWASP Vulnerabilities"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "owaspScanner.vulnerabilityTree",
+        "contents": "No vulnerabilities found.\n[Scan Workspace](command:owaspScanner.scanWorkspace)"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "owaspScanner.scanFile",
+          "group": "security@1",
+          "when": "editorIsOpen"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "owaspScanner.scanWorkspace",
+          "when": "view == owaspScanner.vulnerabilityTree",
+          "group": "navigation"
+        },
+        {
+          "command": "owaspScanner.clearDiagnostics",
+          "when": "view == owaspScanner.vulnerabilityTree",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "test": "node ./out/test/runTest.js",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.0.0",
+    "@types/mocha": "^10.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.0.0",
+    "mocha": "^10.0.0",
+    "typescript": "^5.3.0",
+    "@vscode/test-electron": "^2.3.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.20.0",
+    "minimatch": "^9.0.0"
+  }
+}
