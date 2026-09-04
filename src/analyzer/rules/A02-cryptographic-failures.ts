@@ -21,6 +21,14 @@ const HARDCODED_SECRETS: Rule = {
       { pattern: /(?:secret|token|key)\s*[=:]\s*["'][A-Za-z0-9+/]{32,}={0,2}["']/gi },
       // Connection strings with embedded credentials — \n excluded to prevent cross-line false positives
       { pattern: /(?:mongodb|mysql|postgres|redis|amqp):\/\/[^:\n]+:[^@\n]{3,}@/gi },
+      // GitHub personal access tokens (ghp_, gho_, ghu_, ghs_, ghr_)
+      { pattern: /(?:ghp_|gho_|ghu_|ghs_|ghr_)[A-Za-z0-9]{36}/g },
+      // Stripe secret/publishable keys
+      { pattern: /(?:sk_live_|sk_test_|pk_live_|pk_test_)[A-Za-z0-9]{24,}/g },
+      // PEM private key block embedded in source
+      { pattern: /-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----/g },
+      // JWT secret passed directly to jwt.sign()
+      { pattern: /jwt\.sign\s*\([^,)]+,\s*["'][^"']{16,}["']/gi },
     ]);
   },
 };
@@ -75,10 +83,14 @@ const WEAK_RANDOM: Rule = {
   languages: ['javascript', 'typescript'],
   analyze(document: vscode.TextDocument, text: string): Finding[] {
     return runRegexPatterns(document, text, this, [
-      // Math.random() assigned to token/session/id variable
-      { pattern: /(?:token|session|secret|id|key|nonce|salt)\s*[=:][^=\n]*Math\.random\s*\(\s*\)/gi },
-      // Math.random() used directly in string template for auth
-      { pattern: /Math\.random\s*\(\s*\)\.toString\s*\([^)]*\)\.slice/gi },
+      // Math.random() assigned to token/session/id/key variable
+      { pattern: /(?:token|session|secret|id|key|nonce|salt|password|pass|uuid)\s*[=:][^=\n]*Math\.random\s*\(\s*\)/gi },
+      // Math.random().toString(16/36).slice — common token generation idiom
+      { pattern: /Math\.random\s*\(\s*\)\.toString\s*\(\s*(?:16|36)\s*\)\.slice/gi },
+      // Functions whose names imply token/secret generation using Math.random
+      { pattern: /(?:generate|create|make)(?:Token|Secret|Password|Id|Uuid|Nonce|Salt)\s*\([^)]*\)[^{]*\{[^}]*Math\.random/gi },
+      // crypto.pseudoRandomBytes — deprecated, not cryptographically secure
+      { pattern: /crypto\.pseudoRandomBytes\s*\(/gi },
     ]);
   },
 };

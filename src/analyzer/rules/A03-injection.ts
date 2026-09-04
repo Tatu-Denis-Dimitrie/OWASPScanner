@@ -21,6 +21,12 @@ const SQL_INJECTION: Rule = {
       { pattern: /\.(?:query|execute|exec)\s*\(\s*["'][^"']*["']\s*\+/gi },
       // knex.raw / sequelize.query with template literal
       { pattern: /(?:knex\.raw|sequelize\.query|connection\.query)\s*\(\s*`[^`]*\$\{/gi },
+      // Python: cursor.execute with f-string, % formatting, or .format()
+      { pattern: /cursor\.execute\s*\(\s*(?:f["']|["'][^"']*["']\s*%\s*[\w(]|["'][^"']*["']\s*\.format\s*\()/gi },
+      // PHP: mysql_query / mysqli_query with string concatenation
+      { pattern: /(?:mysql_query|mysqli_query|mysql_real_query)\s*\(\s*(?:\$\w+\s*,\s*)?["'][^"']*["']\s*\.\s*\$/gi },
+      // Java: Statement.execute / executeQuery / executeUpdate with concatenation
+      { pattern: /(?:statement|stmt|conn|connection)\.(?:execute|executeQuery|executeUpdate)\s*\(\s*["'][^"']*["']\s*\+/gi },
     ]);
   },
 };
@@ -39,10 +45,16 @@ const CMD_INJECTION: Rule = {
       { pattern: /(?:child_process\.)?exec\s*\(\s*(?:`[^`]*\$\{|["'][^"']*["']\s*\+)/gi },
       // execSync with template literal or concatenation
       { pattern: /execSync\s*\(\s*(?:`[^`]*\$\{|["'][^"']*["']\s*\+)/gi },
-      // Python: os.system, subprocess.call with format/concat
+      // Python: os.system, os.popen with f-string/format/concat
       { pattern: /os\.(?:system|popen)\s*\(\s*(?:f["']|["'][^"']*["']\s*%|["'][^"']*["']\s*\.format)/gi },
-      // PHP: shell_exec, system, passthru, exec
+      // PHP: shell_exec, system, passthru, exec with variable
       { pattern: /(?:shell_exec|system|passthru|exec)\s*\(\s*\$/gi },
+      // Python: subprocess.run/call/Popen with shell=True (any input becomes injectable)
+      { pattern: /subprocess\.(?:run|call|Popen|check_output|check_call)\s*\([^)]*shell\s*=\s*True/gi },
+      // Python: subprocess with string concat or f-string as first arg
+      { pattern: /subprocess\.(?:run|call|Popen|check_output)\s*\(\s*(?:f["']|["'][^"']*["']\s*\+)/gi },
+      // Java: Runtime.getRuntime().exec() with string concatenation
+      { pattern: /Runtime\.getRuntime\s*\(\s*\)\.exec\s*\(\s*(?:["'][^"']*["']\s*\+|new\s+String)/gi },
     ]);
   },
 };

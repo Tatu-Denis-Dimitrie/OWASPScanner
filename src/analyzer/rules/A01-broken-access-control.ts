@@ -28,13 +28,21 @@ const PATH_TRAVERSAL: Rule = {
   description: 'A file path is constructed from user input without sanitization. An attacker can use ../ sequences to read or write files outside the intended directory.',
   remediation: 'Use path.resolve() and verify the result starts with the expected base directory. Never concatenate user input into file paths without normalization.',
   severity: 'high',
-  languages: ['javascript', 'typescript'],
+  languages: ['javascript', 'typescript', 'python', 'php'],
   analyze(document: vscode.TextDocument, text: string): Finding[] {
     return runRegexPatterns(document, text, this, [
-      // fs.readFile(req.params.file) / fs.readFileSync(req.query.path)
+      // Node.js: fs.readFile(req.params.file)
       { pattern: /fs\.(?:readFile|readFileSync|writeFile|writeFileSync|unlink|stat)\s*\(\s*(?:req\.(?:params|query|body)|request\.(?:params|query|body))\b/gi },
-      // path.join(..., req.params.something) without sanitization
+      // Node.js: path.join/resolve with req input
       { pattern: /path\.(?:join|resolve)\s*\([^)]*(?:req\.(?:params|query|body)|request\.(?:params|query|body))[^)]*\)/gi },
+      // Python (Flask/Django): open() with request.args / request.form / request.json
+      { pattern: /\bopen\s*\(\s*(?:request\.(?:args|form|json|data)\.get\s*\(|request\.(?:args|form|json)\[)/gi },
+      // Python: os.path.join / Path() with request input
+      { pattern: /(?:os\.path\.join|Path)\s*\([^)]*request\.(?:args|form|json|GET|POST|params)/gi },
+      // PHP: file_get_contents / include / require with $_GET, $_POST, $_REQUEST
+      { pattern: /(?:file_get_contents|file|readfile|include|require|include_once|require_once)\s*\(\s*\$_(?:GET|POST|REQUEST|COOKIE)\s*\[/gi },
+      // PHP: fopen with user-controlled variable
+      { pattern: /fopen\s*\(\s*\$_(?:GET|POST|REQUEST|COOKIE)\s*\[/gi },
     ]);
   },
 };

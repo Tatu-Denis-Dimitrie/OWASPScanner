@@ -71,12 +71,16 @@ const WEAK_SESSION: Rule = {
   languages: ['javascript', 'typescript'],
   analyze(document: vscode.TextDocument, text: string): Finding[] {
     return runRegexPatterns(document, text, this, [
-      // httpOnly: false
+      // httpOnly explicitly disabled
       { pattern: /httpOnly\s*:\s*false/gi },
-      // secure: false
+      // secure explicitly disabled
       { pattern: /secure\s*:\s*false/gi },
-      // res.cookie without security options (simplified)
-      { pattern: /res\.cookie\s*\(\s*["'][^"']+["']\s*,\s*[^,)]+\s*\)/gi },
+      // sameSite: "none" — allows cross-site cookies (dangerous without Secure flag)
+      { pattern: /sameSite\s*:\s*["']none["']/gi },
+      // res.cookie(name, value) with only 2 args — no options object at all
+      { pattern: /res\.cookie\s*\(\s*["'][^"']+["']\s*,\s*[^,{)]+\s*\)\s*[;,\n]/gi },
+      // Django: SESSION_COOKIE_SECURE = False / SESSION_COOKIE_HTTPONLY = False
+      { pattern: /SESSION_COOKIE_(?:SECURE|HTTPONLY)\s*=\s*False/g },
     ]);
   },
 };
